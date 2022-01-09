@@ -1,37 +1,20 @@
-name: Build Docker Image
+name: Update Docker
+
 on:
-  # Trigger the workflow on push but only for the main branch
-  push:
-    branches:
-      - master
-  # Trigger manually
   workflow_dispatch:
+  schedule:
+    - cron:  '0 0 * * 0'
 
 jobs:
 
-  build:
-
-    name: Build Docker image
-    runs-on: ubuntu-latest
+  Docker:
     if: ${{ github.repository_owner == 'Armbian' }}
-    steps:
+    uses: armbian/scripts/.github/workflows/update-docker-image.yml@master
+    
+    secrets:
+      CR_PAT: ${{ secrets.CR_PAT }}
 
-     - uses: actions/checkout@v1
-
-     - name: Login to GitHub Container Registry
-       uses: docker/login-action@v1
-       with:
-         registry: ghcr.io
-         username: ${{ github.actor }}
-         password: ${{ secrets.CR_PAT }}
-
-     - name: Build Docker image
-
-       run: |
-         sed -i "s/-it --rm/-i --rm/" config/templates/config-docker.conf
-         touch .ignore_changes
-         ./compile.sh docker BOARD=virtual-qemu BRANCH=current RELEASE=focal BUILD_MINIMAL=yes BUILD_DESKTOP=no KERNEL_ONLY=no KERNEL_CONFIGURE=no COMPRESS_OUTPUTIMAGE=no REPOSITORY_INSTALL="u-boot,kernel,armbian-config,armbian-firmware" JUST_INIT=yes
-         docker tag armbian:$(cat VERSION) ghcr.io/armbian/build:$(cat VERSION)
-
-     - name: Push Docker image
-       run: docker push ghcr.io/armbian/build:$(cat VERSION)
+  Docker-test:
+    needs: Docker
+    if: ${{ github.repository_owner == 'Armbian' }}    
+    uses: armbian/scripts/.github/workflows/build-test-image-docker.yml@master

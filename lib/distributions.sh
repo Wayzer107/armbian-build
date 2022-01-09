@@ -327,7 +327,7 @@ POST_INSTALL_KERNEL_DEBS
 
 	# install board support packages
 	if [[ "${REPOSITORY_INSTALL}" != *bsp* ]]; then
-		install_deb_chroot "${DEB_STORAGE}/$RELEASE/${BSP_CLI_PACKAGE_FULLNAME}.deb" | tee "${DEST}"/${LOG_SUBPATH}/install.log 2>&1
+		install_deb_chroot "${DEB_STORAGE}/${BSP_CLI_PACKAGE_FULLNAME}.deb" | tee "${DEST}"/${LOG_SUBPATH}/install.log 2>&1
 	else
 		install_deb_chroot "${CHOSEN_ROOTFS}" "remote"
 	fi
@@ -446,8 +446,8 @@ FAMILY_TWEAKS
 	chroot "${SDCARD}" /bin/bash -c "chown root:messagebus /usr/lib/dbus-1.0/dbus-daemon-launch-helper"
 	chroot "${SDCARD}" /bin/bash -c "chmod u+s /usr/lib/dbus-1.0/dbus-daemon-launch-helper"
 
-	# disable sambe since it hangs when no network is present at boot
-	chroot "${SDCARD}" /bin/bash -c "systemctl --quiet disable smbd 2> /dev/null"
+	# disable samba NetBIOS over IP name service requests since it hangs when no network is present at boot
+	chroot "${SDCARD}" /bin/bash -c "systemctl --quiet disable nmbd 2> /dev/null"
 
 	# disable low-level kernel messages for non betas
 	if [[ -z $BETA ]]; then
@@ -580,6 +580,9 @@ FAMILY_TWEAKS
 
 	# build logo in any case
 	boot_logo
+
+	# disable MOTD for first boot - we want as clean 1st run as possible
+	chmod -x "${SDCARD}"/etc/update-motd.d/*
 
 }
 
